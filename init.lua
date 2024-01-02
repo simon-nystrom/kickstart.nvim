@@ -113,7 +113,7 @@ require('lazy').setup({
   },
 
   -- Useful plugin to show you pending keybinds.
-  { 'folke/which-key.nvim', opts = {} },
+  { 'folke/which-key.nvim',  opts = {} },
   {
     -- Adds git related signs to the gutter, as well as utilities for managing changes
     'lewis6991/gitsigns.nvim',
@@ -191,10 +191,10 @@ require('lazy').setup({
 
   {
     -- Theme inspired by Atom
-    'navarasu/onedark.nvim',
+    'folke/tokyonight.nvim',
     priority = 1000,
     config = function()
-      vim.cmd.colorscheme 'onedark'
+      vim.cmd.colorscheme 'tokyonight-storm'
     end,
   },
 
@@ -205,7 +205,7 @@ require('lazy').setup({
     opts = {
       options = {
         icons_enabled = false,
-        theme = 'onedark',
+        theme = 'tokyonight',
         component_separators = '|',
         section_separators = '',
       },
@@ -257,7 +257,7 @@ require('lazy').setup({
   -- NOTE: Next Step on Your Neovim Journey: Add/Configure additional "plugins" for kickstart
   --       These are some example plugins that I've included in the kickstart repository.
   --       Uncomment any of the lines below to enable them.
-  -- require 'kickstart.plugins.autoformat',
+  require 'kickstart.plugins.autoformat',
   -- require 'kickstart.plugins.debug',
 
   -- NOTE: The import below can automatically add your own plugins, configuration, etc from `lua/custom/plugins/*.lua`
@@ -266,7 +266,7 @@ require('lazy').setup({
   --    Uncomment the following line and add your plugins to `lua/custom/plugins/*.lua` to get going.
   --
   --    For additional information see: https://github.com/folke/lazy.nvim#-structuring-your-plugins
-  -- { import = 'custom.plugins' },
+  { import = 'custom.plugins' },
 }, {})
 
 -- [[ Setting options ]]
@@ -274,13 +274,15 @@ require('lazy').setup({
 -- NOTE: You can change these options as you wish!
 
 -- Set highlight on search
-vim.o.hlsearch = false
+vim.o.hlsearch = true
 
 -- Make line numbers default
 vim.wo.number = true
 
 -- Enable mouse mode
 vim.o.mouse = 'a'
+
+vim.o.cursorline = true
 
 -- Sync clipboard between OS and Neovim.
 --  Remove this option if you want your OS clipboard to remain independent.
@@ -293,6 +295,7 @@ vim.o.breakindent = true
 -- Save undo history
 vim.o.undofile = true
 
+
 -- Case-insensitive searching UNLESS \C or capital in search
 vim.o.ignorecase = true
 vim.o.smartcase = true
@@ -303,6 +306,10 @@ vim.wo.signcolumn = 'yes'
 -- Decrease update time
 vim.o.updatetime = 250
 vim.o.timeoutlen = 300
+
+vim.o.scrolloff = 10
+vim.o.shiftwidth = 2
+vim.o.tabstop = 2
 
 -- Set completeopt to have a better completion experience
 vim.o.completeopt = 'menuone,noselect'
@@ -325,6 +332,20 @@ vim.keymap.set('n', '[d', vim.diagnostic.goto_prev, { desc = 'Go to previous dia
 vim.keymap.set('n', ']d', vim.diagnostic.goto_next, { desc = 'Go to next diagnostic message' })
 vim.keymap.set('n', '<leader>e', vim.diagnostic.open_float, { desc = 'Open floating diagnostic message' })
 vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostics list' })
+
+-- Custom keymaps
+vim.keymap.set('n', '<C-u>', '<C-u>zz')
+vim.keymap.set('n', '<C-d>', '<C-d>zz')
+vim.keymap.set('n', '<C-h>', '<C-w>h')
+vim.keymap.set('n', '<C-j>', '<C-w>j')
+vim.keymap.set('n', '<C-k>', '<C-w>k')
+vim.keymap.set('n', '<C-l>', '<C-w>l')
+vim.keymap.set('n', '<C-Left>', '<C-w>h')
+vim.keymap.set('n', '<C-Down>', '<C-w>j')
+vim.keymap.set('n', '<C-Up>', '<C-w>k')
+vim.keymap.set('n', '<C-Right>', '<C-w>l')
+vim.keymap.set('n', '<Esc>', ':noh <CR>')
+vim.keymap.set('n', '<C-s>', '*:%s/<C-r><C-w>//g<Left><Left>')
 
 -- [[ Highlight on yank ]]
 -- See `:help vim.highlight.on_yank()`
@@ -423,7 +444,7 @@ vim.keymap.set('n', '<leader>sr', require('telescope.builtin').resume, { desc = 
 vim.defer_fn(function()
   require('nvim-treesitter.configs').setup {
     -- Add languages to be installed here that you want installed for treesitter
-    ensure_installed = { 'c', 'cpp', 'go', 'lua', 'python', 'rust', 'tsx', 'javascript', 'typescript', 'vimdoc', 'vim', 'bash' },
+    ensure_installed = { 'lua', 'python', 'tsx', 'javascript', 'typescript', 'vimdoc', 'vim', 'bash', 'elixir' },
 
     -- Autoinstall languages that are not installed. Defaults to false (but you can change for yourself!)
     auto_install = false,
@@ -486,50 +507,6 @@ vim.defer_fn(function()
   }
 end, 0)
 
--- [[ Configure LSP ]]
---  This function gets run when an LSP connects to a particular buffer.
-local on_attach = function(_, bufnr)
-  -- NOTE: Remember that lua is a real programming language, and as such it is possible
-  -- to define small helper and utility functions so you don't have to repeat yourself
-  -- many times.
-  --
-  -- In this case, we create a function that lets us more easily define mappings specific
-  -- for LSP related items. It sets the mode, buffer and description for us each time.
-  local nmap = function(keys, func, desc)
-    if desc then
-      desc = 'LSP: ' .. desc
-    end
-
-    vim.keymap.set('n', keys, func, { buffer = bufnr, desc = desc })
-  end
-
-  nmap('<leader>rn', vim.lsp.buf.rename, '[R]e[n]ame')
-  nmap('<leader>ca', vim.lsp.buf.code_action, '[C]ode [A]ction')
-
-  nmap('gd', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
-  nmap('gr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
-  nmap('gI', require('telescope.builtin').lsp_implementations, '[G]oto [I]mplementation')
-  nmap('<leader>D', require('telescope.builtin').lsp_type_definitions, 'Type [D]efinition')
-  nmap('<leader>ds', require('telescope.builtin').lsp_document_symbols, '[D]ocument [S]ymbols')
-  nmap('<leader>ws', require('telescope.builtin').lsp_dynamic_workspace_symbols, '[W]orkspace [S]ymbols')
-
-  -- See `:help K` for why this keymap
-  nmap('K', vim.lsp.buf.hover, 'Hover Documentation')
-  nmap('<C-k>', vim.lsp.buf.signature_help, 'Signature Documentation')
-
-  -- Lesser used LSP functionality
-  nmap('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
-  nmap('<leader>wa', vim.lsp.buf.add_workspace_folder, '[W]orkspace [A]dd Folder')
-  nmap('<leader>wr', vim.lsp.buf.remove_workspace_folder, '[W]orkspace [R]emove Folder')
-  nmap('<leader>wl', function()
-    print(vim.inspect(vim.lsp.buf.list_workspace_folders()))
-  end, '[W]orkspace [L]ist Folders')
-
-  -- Create a command `:Format` local to the LSP buffer
-  vim.api.nvim_buf_create_user_command(bufnr, 'Format', function(_)
-    vim.lsp.buf.format()
-  end, { desc = 'Format current buffer with LSP' })
-end
 
 -- document existing key chains
 require('which-key').register {
@@ -568,7 +545,16 @@ local servers = {
   -- pyright = {},
   -- rust_analyzer = {},
   -- tsserver = {},
-  -- html = { filetypes = { 'html', 'twig', 'hbs'} },
+  html = { filetypes = { 'html', 'elixir' } },
+
+  tailwindcss = {
+    init_options = {
+      userLanguages = {
+        elixir = "phoenix-heex",
+        heex = "phoenix-heex"
+      },
+    },
+  },
 
   lua_ls = {
     Lua = {
@@ -594,16 +580,24 @@ mason_lspconfig.setup {
   ensure_installed = vim.tbl_keys(servers),
 }
 
+local lsp_config = require('custom.lsp')
+
 mason_lspconfig.setup_handlers {
   function(server_name)
+    -- Let these be initialized by elixir-tools
+    if server_name == "elixirls" or server_name == "nextls" then
+      return
+    end
     require('lspconfig')[server_name].setup {
       capabilities = capabilities,
-      on_attach = on_attach,
+      on_attach = lsp_config.on_attach,
+      init_options = (servers[server_name] or {}).init_options,
       settings = servers[server_name],
       filetypes = (servers[server_name] or {}).filetypes,
     }
   end,
 }
+
 
 -- [[ Configure nvim-cmp ]]
 -- See `:help cmp`
