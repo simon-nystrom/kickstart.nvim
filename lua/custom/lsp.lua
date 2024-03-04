@@ -1,7 +1,7 @@
 local M = {}
 -- [[ Configure LSP ]]
 --  This function gets run when an LSP connects to a particular buffer.
-M.on_attach = function(_, bufnr)
+M.on_attach = function(client, bufnr)
 	-- NOTE: Remember that lua is a real programming language, and as such it is possible
 	-- to define small helper and utility functions so you don't have to repeat yourself
 	-- many times.
@@ -28,7 +28,7 @@ M.on_attach = function(_, bufnr)
 
 	-- See `:help K` for why this keymap
 	nmap('K', vim.lsp.buf.hover, 'Hover Documentation')
-	nmap('<C-k>', vim.lsp.buf.signature_help, 'Signature Documentation')
+	nmap('<C-m>', vim.lsp.buf.signature_help, 'Signature Documentation')
 
 	-- Lesser used LSP functionality
 	nmap('gD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
