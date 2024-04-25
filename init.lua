@@ -560,6 +560,7 @@ require('lazy').setup({
         -- gopls = {},
         pyright = {},
         elixirls = {},
+        kotlin_language_server = {},
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
@@ -569,7 +570,7 @@ require('lazy').setup({
         -- But for many setups, the LSP (`tsserver`) will work just fine
         -- tsserver = {},
         --
-        html = { filetypes = { 'html', 'phoenix-heex' } },
+        html = { filetypes = { 'html', 'phoenix-heex', 'heex', 'javascriptreact', 'typescriptreact' } },
         tailwindcss = {
           init_options = {
             userLanguages = {
@@ -644,7 +645,9 @@ require('lazy').setup({
         lua = { 'stylua' },
         python = { 'black' },
         javascript = { 'prettierd' },
+        typescript = { 'prettierd' },
         javascriptreact = { 'prettierd' },
+        typescriptreact = { 'prettierd' },
         -- Conform can also run multiple formatters sequentially
         -- python = { "isort", "black" },
         --
@@ -675,12 +678,12 @@ require('lazy').setup({
           -- `friendly-snippets` contains a variety of premade snippets.
           --    See the README about individual language/framework/plugin snippets:
           --    https://github.com/rafamadriz/friendly-snippets
-          -- {
-          --   'rafamadriz/friendly-snippets',
-          --   config = function()
-          --     require('luasnip.loaders.from_vscode').lazy_load()
-          --   end,
-          -- },
+          {
+            'rafamadriz/friendly-snippets',
+            config = function()
+              require('luasnip.loaders.from_vscode').lazy_load()
+            end,
+          },
         },
       },
       'saadparwaiz1/cmp_luasnip',
@@ -695,6 +698,11 @@ require('lazy').setup({
       -- See `:help cmp`
       local cmp = require 'cmp'
       local luasnip = require 'luasnip'
+      require('luasnip.loaders.from_vscode').lazy_load()
+      luasnip.filetype_extend('elixir', { 'html' })
+      luasnip.filetype_extend('elixir', { 'eelixir' })
+      luasnip.filetype_extend('heex', { 'html' })
+      luasnip.filetype_extend('typescriptreact', { 'html' })
       luasnip.config.setup {}
 
       cmp.setup {
@@ -724,10 +732,34 @@ require('lazy').setup({
           --  This will expand snippets if the LSP sent a snippet.
           ['<C-y>'] = cmp.mapping.confirm { select = true },
 
+          ['<CR>'] = cmp.mapping.confirm {
+            behavior = cmp.ConfirmBehavior.Replace,
+            select = true,
+          },
+
+          ['<Tab>'] = cmp.mapping(function(fallback)
+            if cmp.visible() then
+              cmp.select_next_item()
+            elseif luasnip.expand_or_locally_jumpable() then
+              luasnip.expand_or_jump()
+            else
+              fallback()
+            end
+          end, { 'i', 's' }),
+          ['<S-Tab>'] = cmp.mapping(function(fallback)
+            if cmp.visible() then
+              cmp.select_prev_item()
+            elseif luasnip.locally_jumpable(-1) then
+              luasnip.jump(-1)
+            else
+              fallback()
+            end
+          end, { 'i', 's' }),
+
           -- Manually trigger a completion from nvim-cmp.
           --  Generally you don't need this, because nvim-cmp will display
           --  completions whenever it has completion options available.
-          ['<C-Space>'] = cmp.mapping.complete {},
+          ['<C-e>'] = cmp.mapping.complete {},
 
           -- Think of <c-l> as moving to the right of your snippet expansion.
           --  So if you have a snippet that's like:
@@ -889,6 +921,42 @@ require('lazy').setup({
       lazy = '💤 ',
     },
   },
+})
+
+local function splitString(str, delimiter)
+  local result = {}
+  for match in (str .. delimiter):gmatch('(.-)' .. delimiter) do
+    table.insert(result, match)
+  end
+  return result
+end
+
+function ElixirTestJump()
+  local current_file_path = vim.fn.expand '%:.'
+
+  local parts = splitString(current_file_path, '/')
+  if parts[1] == 'test' then
+    local target = current_file_path:gsub('^test', 'lib', 1):gsub('_test[.]exs', '.ex', 1)
+    vim.cmd('e ' .. target)
+  else
+    local target = current_file_path:gsub('^lib', 'test', 1):gsub('[.]ex', '_test.exs', 1)
+    vim.cmd('e ' .. target)
+  end
+end
+
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = 'elixir',
+  callback = function()
+    vim.api.nvim_buf_set_keymap(
+      0,
+      'n',
+      '<C-t>',
+      ':silent !tmux splitw -d -h -l 80 "fswatch lib test | mix test --listen-on-stdin --stale"<CR>',
+      { silent = true }
+    )
+
+    vim.api.nvim_buf_set_keymap(0, 'n', '<C-f>', ':lua ElixirTestJump()<CR>', { silent = true })
+  end,
 })
 
 -- The line beneath this is called `modeline`. See `:help modeline`
