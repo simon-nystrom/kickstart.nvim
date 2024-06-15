@@ -258,9 +258,7 @@ require('lazy').setup({
     'numToStr/Comment.nvim',
     config = function()
       require('Comment').setup {
-        pre_hook = function()
-          return vim.bo.commentstring
-        end,
+        pre_hook = require('ts_context_commentstring.integrations.comment_nvim').create_pre_hook(),
       }
     end,
   },
@@ -598,7 +596,7 @@ require('lazy').setup({
         -- But for many setups, the LSP (`tsserver`) will work just fine
         -- tsserver = {},
         --
-        html = { filetypes = { 'html', 'phoenix-heex', 'heex', 'javascriptreact', 'typescriptreact' } },
+        html = { filetypes = { 'html', 'phoenix-heex', 'heex', 'javascript', 'typescript', 'javascriptreact', 'typescriptreact' } },
         tailwindcss = {
           init_options = {
             userLanguages = {
@@ -979,7 +977,7 @@ vim.api.nvim_create_autocmd('FileType', {
       0,
       'n',
       '<C-t>',
-      ':silent !tmux splitw -d -h -l 80 "fswatch lib test | mix test --listen-on-stdin --stale"<CR>',
+      ':silent !tmux splitw -d -h -l 80 "fswatch lib test | mix test --listen-on-stdin --stale"<CR>:silent !tmux splitw -d -v -t 2 "cd assets && npm run test -o"<CR>',
       { silent = true }
     )
 
